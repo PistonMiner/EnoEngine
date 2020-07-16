@@ -3,6 +3,7 @@ using EnoCore.Models;
 using EnoCore.Models.Database;
 using EnoCore.Models.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,17 @@ namespace EnoDatabase
     public partial class EnoDatabase : IEnoDatabase
     {
         public async Task ProcessSubmissionsBatch(List<(Flag flag, long attackerTeamId,
+            TaskCompletionSource<FlagSubmissionResult> result)> submissions,
+            long flagValidityInRounds, EnoStatistics statistics)
+        {
+            int i = 0;
+            while (i < submissions.Count)
+            {
+                await ProcessSomeSubmissionsBatch(submissions.Skip(i).Take(Math.Min(100, submissions.Count - i)), flagValidityInRounds, statistics);
+                i += 100;
+            }
+        }
+        public async Task ProcessSomeSubmissionsBatch(IEnumerable<(Flag flag, long attackerTeamId,
             TaskCompletionSource<FlagSubmissionResult> result)> submissions,
             long flagValidityInRounds, EnoStatistics statistics)
         {
@@ -122,7 +134,7 @@ namespace EnoDatabase
                 catch (Exception e)
                 {
                     await transaction.RollbackAsync();
-                    throw new Exception($"Rollbacking Transaction in {nameof(ProcessSubmissionsBatch)}", e);
+                    throw new Exception($"Rollbacking Transaction in {nameof(ProcessSomeSubmissionsBatch)}", e);
                 }
                 stopWatch.Stop();
 

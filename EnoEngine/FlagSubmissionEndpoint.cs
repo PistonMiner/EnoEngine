@@ -336,12 +336,13 @@ namespace EnoEngine.FlagSubmission
             {
                 while (!token.IsCancellationRequested)
                 {
+                    var team_max_submits = Math.Min(Math.Max(10000 / Channels.Count, 50), 200);
                     List<(Flag flag, long attackerTeamId, TaskCompletionSource<FlagSubmissionResult> result)> submissions = new List<(Flag flag, long attackerTeamId, TaskCompletionSource<FlagSubmissionResult>)>();
                     foreach (var (teamid, channel) in Channels)
                     {
                         int SubmissionsPerTeam = 0;
                         var reader = channel.Reader;
-                        while (reader.TryRead(out var item) && SubmissionsPerTeam<100)
+                        while (reader.TryRead(out var item) && SubmissionsPerTeam< team_max_submits)
                         {
                             SubmissionsPerTeam++;
                             submissions.Add((item.Flag, teamid, item.FeedbackSource));
